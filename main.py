@@ -3,6 +3,11 @@ from bs4 import BeautifulSoup
 import requests
 import tkinter
 from tkinter import ttk
+import datetime
+import lxml
+#twilio sms poslani
+
+law_response = []
 
 #WINDOW SETUP
 
@@ -24,7 +29,6 @@ welcome_frame.pack(fill="x", pady=10)
 
 
 central_label = ttk.Label(welcome_frame, text="Law scraper", font=("Calibri", 30)).grid(column=1, row=0)
-
 ttk.Label(welcome_frame, text="Search for law by law number, year and paragraph", font=("Calibri", 20)).grid(column=1, row=1)
 
 # central_label = tkinter.Label(text="Law Scraper", font=("Calibri", 30))
@@ -73,10 +77,35 @@ paragraph.grid(column=2, row=3, padx=5, pady=5)
 # law.insert(index=0, string=0)
 # paragraph.grid(column=2, row=3)
 
-search_button = ttk.Button(input_frame, text="Search", command=None)
+# SEARCH FUNCTION/class
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Accept-Language": "cs-CZ,cs;q=0.9"
+}
+
+def get_law():
+    global law_response
+    response = requests.get(url=f"https://krajta.slv.cz/2006/262/par_101", headers=headers)
+    response.raise_for_status()
+    data = response.text
+
+    soup = BeautifulSoup(data, "lxml")
+    selector = "[id*='par_101']"
+    law = soup.select(selector=selector)
+    for i in law:
+        law_response.append(i.get_text())
+    
+    if law_response == []:
+        search_result.config(text="Zákon NEBYL nalezen", foreground="red")
+    else:
+        search_result.config(text="Zákon BYL nalezen", foreground="green")
+
+search_button = ttk.Button(input_frame, text="Search", command=get_law)
 search_button.grid(column=1, row=4)
 
 #LAW SEARCH
+
 
 search_frame = ttk.Frame(window, padding=10)
 search_frame.pack(fill="x", pady=10)
@@ -87,6 +116,17 @@ search_frame.pack(fill="x", pady=10)
 search_result = ttk.Label(search_frame, text="-", font=("Calibri", 15))
 # search_result = tkinter.Label(text="-", font=("Calibri", 15))
 search_result.grid(column=1, row=5)
+
+#email function 
+
+
+def sending_email():
+    my_email = "simonsivek@seznam.cz"
+    password = "abgb1747"
+    connection = smtplib.SMTP("smtp.seznam.cz")
+    connection.starttls()
+    connection.login(user=my_email, password=password)
+    # connection.sendmail(from_addr=my_email, to_addrs=email_input, msg=)
 
 
 #SENDING A MAIL
@@ -102,17 +142,19 @@ email_input.grid(column=1, row=7, pady=5)
 # email_input.focus
 # email_input.grid(column=1, row=6)
 
-email_button = ttk.Button(email_frame, text="Send", command=None)
+email_button = ttk.Button(email_frame, text="Send", command=sending_email)
 email_button.grid(column=1, row=8)
 
 # email_button = tkinter.Button(text="Send", command=None)
 # email_button.grid(column=1, row=8)
 
+my_email = "simonsivek4@gmail.com"
+password = "abgb1747"
+connection = smtplib.SMTP("smtp.gmail.com")
+connection.starttls()
+connection.login(user=my_email, password=password)
+connection.sendmail(from_addr=my_email, to_addrs=email_input)
 
+#SENDING SMS
 
 window.mainloop()
-
-
-
-
-
