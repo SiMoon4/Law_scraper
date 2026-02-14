@@ -41,27 +41,31 @@ style.configure("TButton", font = ("Calibri", 12))
 
 welcome_frame = ttk.Frame(window, padding=10)
 welcome_frame.pack(fill="x", pady=10)
+welcome_frame.columnconfigure(0, weight=1)
 
-
-central_label = ttk.Label(welcome_frame, text="Law scraper", font=("Calibri", 30)).grid(column=1, row=0)
-ttk.Label(welcome_frame, text="Search for law by law number, year and paragraph", font=("Calibri", 20)).grid(column=1, row=1)
+central_label = ttk.Label(welcome_frame, text="Law scraper", font=("Calibri", 30)).grid(column=0, row=0)
+ttk.Label(welcome_frame, text="Search for law by law number, year and paragraph", font=("Calibri", 20)).grid(column=0, row=1)
 
 #LAW INPUT
 
 input_frame = ttk.Frame(window, padding=10)
 input_frame.pack(fill="x", pady=10)
 
-ttk.Label(input_frame, text="Law number").grid(column=0, row=2, pady=5)
-law_number = ttk.Entry(input_frame, width=20)
-law_number.grid(column=0, row=3, padx=5, sticky="ew", pady=5)
+input_frame.columnconfigure(0, weight=1)
+input_frame.columnconfigure(1, weight=1)
+input_frame.columnconfigure(2, weight=1)
 
-ttk.Label(input_frame, text="Year").grid(column=1, row=2, pady=5)
-year = ttk.Entry(input_frame, width=20)
-year.grid(column=1, row=3, padx=5, pady=5)
+ttk.Label(input_frame, text="Law number").grid(column=0, row=0, pady=5)
+law_number = ttk.Entry(input_frame, width=20, justify="center")
+law_number.grid(column=0, row=1, padx=5, pady=5)
 
-ttk.Label(input_frame, text="Paragraph").grid(column=2, row=2, pady=5)
-paragraph = ttk.Entry(input_frame, width=20)
-paragraph.grid(column=2, row=3, padx=5, pady=5)
+ttk.Label(input_frame, text="Year").grid(column=1, row=0, pady=5)
+year = ttk.Entry(input_frame, width=20, justify="center")
+year.grid(column=1, row=1, padx=5, pady=5)
+
+ttk.Label(input_frame, text="Paragraph").grid(column=2, row=0, pady=5)
+paragraph = ttk.Entry(input_frame, width=20, justify="center")
+paragraph.grid(column=2, row=1, padx=5, pady=5)
 
 # SEARCH FUNCTION/class
 
@@ -98,15 +102,16 @@ def get_law():
         search_result.config(text="Zákon BYL nalezen", foreground="green")
 
 search_button = ttk.Button(input_frame, text="Search", command=get_law)
-search_button.grid(column=1, row=4)
+search_button.grid(column=0, row=2, columnspan=3, pady=10)
 
 #LAW SEARCH
 
 search_frame = ttk.Frame(window, padding=10)
 search_frame.pack(fill="x", pady=10)
+search_frame.columnconfigure(0, weight=1)
 
 search_result = ttk.Label(search_frame, font=("Calibri", 15))
-search_result.grid(column=0, row=5)
+search_result.grid(column=0, row=0)
 
 #EMAIL FUNCTION
 
@@ -139,21 +144,23 @@ def sending_email():
 
 email_frame = ttk.Frame(window, padding=10)
 email_frame.pack(fill="x", pady=10)
+email_frame.columnconfigure(0, weight=1)
 
-ttk.Label(email_frame, text="Send it to your email").grid(column=1, row=6, pady=5)
-email_input = ttk.Entry(email_frame, width=40)
-email_input.grid(column=1, row=7, pady=5)
+ttk.Label(email_frame, text="Send it to your email").grid(column=0, row=0, pady=5)
+email_input = ttk.Entry(email_frame, width=40, justify="center")
+email_input.grid(column=0, row=1, pady=5)
 
 email_button = ttk.Button(email_frame, text="Send", command=sending_email)
-email_button.grid(column=1, row=8)
+email_button.grid(column=0, row=2, pady=5)
 
 #EMAIL CONFIRMATION
 
 email_sent_frame = ttk.Frame(window, padding=10)
 email_sent_frame.pack(fill="x", pady=10)
+email_sent_frame.columnconfigure(0, weight=1)
 
 email_sent_result = ttk.Label(email_sent_frame, font=("Calibri", 15))
-email_sent_result.grid(column=1, row=5)
+email_sent_result.grid(column=0, row=0)
 
 #SENDING SMS
 
