@@ -66,12 +66,13 @@ paragraph.grid(column=2, row=3, padx=5, pady=5)
 # SEARCH FUNCTION/class
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
     "Accept-Language": "cs-CZ,cs;q=0.9"
 }
 
 def get_law():
     global law_response
+    global url
     p = paragraph.get()
     y = year.get()
     n = law_number.get()
@@ -80,7 +81,8 @@ def get_law():
         search_result.config(text="Vyplňte všechna pole!", foreground="red")
         return
 
-    response = requests.get(url=f"https://krajta.slv.cz/{y}/{n}/par_{p}", headers=headers)
+    url = f"https://krajta.slv.cz/{y}/{n}/par_{p}"
+    response = requests.get(url=url, headers=headers)
     response.raise_for_status()
     data = response.text
 
@@ -119,6 +121,7 @@ def sending_email():
         msg["SUBJECT"] = "Zákon, který jsi hledal!"
         for i in law_response:
             msg.attach(MIMEText(f"{i}\n", "plain"))
+        msg.attach(MIMEText(f"{url}", "plain"))
 
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
@@ -126,7 +129,7 @@ def sending_email():
             server.sendmail(from_addr=my_email, to_addrs=email_to, msg=msg.as_string())
         
         email_sent_result.config(text="Email BYL poslán!", foreground="green")
-        print("Email nebyl poslán!")
+        print("Email byl poslán!")
     except Exception as e:
         email_sent_result.config(text="Email NEBYL poslán!", foreground="red")
         print(f"Email nebyl poslán! Error: {e}")
