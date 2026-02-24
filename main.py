@@ -7,6 +7,8 @@ import tkinter
 from tkinter import ttk
 import os
 from dotenv import load_dotenv
+import webbrowser
+from twilio.rest import Client
 import datetime
 import lxml
 #twilio sms poslani
@@ -15,11 +17,14 @@ load_dotenv()
 
 my_email = os.getenv("MY_EMAIL")
 password = os.getenv("PASSWORD")
+twilio_username = os.getenv("TWILIO_USERNAME")
+twilio_password = os.getenv("TWILIO_PASSWORD")
+phone_number_from = os.getenv("PHONE_NUMBER")
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
 if not my_email or not password:
-    print("Chyba: E-mailové údaje nebyly nalezeny v .env souboru.")
-    print("Ujistěte se, že máte soubor .env a obsahuje EMAIL_USER a EMAIL_PASS.")
+    print("Error: Email information were not found in the .env file.")
+    print("Ensure you have an .env file and that it contains EMAIL_USER and EMAIL_PASS.")
 
 #future - object orianted 
 law_response = []
@@ -28,7 +33,7 @@ law_response = []
 
 window = tkinter.Tk()
 window.title("Law scraper")
-window.minsize(width= 700, height= 500)
+window.minsize(width= 800, height= 500)
 window.config(padx=30, pady=50, bg="grey90")
 
 #STYLES
@@ -56,18 +61,18 @@ input_frame.columnconfigure(1, weight=1)
 input_frame.columnconfigure(2, weight=1)
 
 ttk.Label(input_frame, text="Law number").grid(column=0, row=0, pady=5)
-law_number = ttk.Entry(input_frame, width=20, justify="center")
+law_number = ttk.Entry(input_frame, width=30, justify="center")
 law_number.grid(column=0, row=1, padx=5, pady=5)
 
 ttk.Label(input_frame, text="Year").grid(column=1, row=0, pady=5)
-year = ttk.Entry(input_frame, width=20, justify="center")
+year = ttk.Entry(input_frame, width=30, justify="center")
 year.grid(column=1, row=1, padx=5, pady=5)
 
 ttk.Label(input_frame, text="Paragraph").grid(column=2, row=0, pady=5)
-paragraph = ttk.Entry(input_frame, width=20, justify="center")
+paragraph = ttk.Entry(input_frame, width=30, justify="center")
 paragraph.grid(column=2, row=1, padx=5, pady=5)
 
-# SEARCH FUNCTION/class
+# SEARCH FUNCTION
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
@@ -82,7 +87,7 @@ def get_law():
     n = law_number.get()
 
     if not p or not y or not n:
-        search_result.config(text="Vyplňte všechna pole!", foreground="red")
+        search_result.config(text="Fill in all fields!", foreground="red")
         return
 
     url = f"https://krajta.slv.cz/{y}/{n}/par_{p}"
@@ -97,11 +102,13 @@ def get_law():
         law_response.append(i.get_text())
     
     if law_response == []:
-        search_result.config(text="Zákon NEBYL nalezen", foreground="red")
+        search_result.config(text="The law HAS NOT BEEN found", foreground="red")
+        link_result.config(text="Link is NOT ready!", foreground="red")
     else:
-        search_result.config(text="Zákon BYL nalezen", foreground="green")
+        search_result.config(text="The law HAS BEEN found", foreground="green")
+        link_result.config(text="Link is ready!", foreground="green")
 
-search_button = ttk.Button(input_frame, text="Search", command=get_law)
+search_button = ttk.Button(input_frame, text="Search", command=get_law, width=25)
 search_button.grid(column=0, row=2, columnspan=3, pady=10)
 
 #LAW SEARCH
@@ -118,12 +125,12 @@ search_result.grid(column=0, row=0)
 def sending_email():
     try:
         if law_response == []:
-            email_sent_result.config(text="Nejprve vyhledej zákon", foreground="red")
+            sent_result.config(text="First, find the law", foreground="red")
         email_to = email_input.get()
         msg = MIMEMultipart()
         msg["FROM"] = my_email
         msg["TO"] = email_to
-        msg["SUBJECT"] = "Zákon, který jsi hledal!"
+        msg["SUBJECT"] = "The law you have been searching for!"
         for i in law_response:
             msg.attach(MIMEText(f"{i}\n", "plain"))
         msg.attach(MIMEText(f"{url}", "plain"))
@@ -133,35 +140,65 @@ def sending_email():
             server.login(my_email, password)
             server.sendmail(from_addr=my_email, to_addrs=email_to, msg=msg.as_string())
         
-        email_sent_result.config(text="Email BYL poslán!", foreground="green")
-        print("Email byl poslán!")
+        sent_result.config(text="Email HAS BEEN sent!", foreground="green")
+        print("Email HAS BEEN sent!")
     except Exception as e:
-        email_sent_result.config(text="Email NEBYL poslán!", foreground="red")
-        print(f"Email nebyl poslán! Error: {e}")
+        sent_result.config(text="Email HAS NOT BEEN sent!", foreground="red")
+        print(f"Email HAS NOT BEEN sent! Error: {e}")
 
+#LINK FUNCTION
 
-#SENDING A MAIL
+def webside_link():
+    webbrowser.open_new(url=url)
+    print(law_response)
 
-email_frame = ttk.Frame(window, padding=10)
-email_frame.pack(fill="x", pady=10)
-email_frame.columnconfigure(0, weight=1)
+#SMS_FUNCTION
 
-ttk.Label(email_frame, text="Send it to your email").grid(column=0, row=0, pady=5)
-email_input = ttk.Entry(email_frame, width=40, justify="center")
-email_input.grid(column=0, row=1, pady=5)
+def sending_text():
 
-email_button = ttk.Button(email_frame, text="Send", command=sending_email)
+    phone_number_to = sms_input.get()
+    client = Client(username=twilio_username, password=twilio_password)
+    message = client.messages.create(body=f"Here is the link to the law\n{url}", from_=phone_number_from, to=phone_number_to)
+    print(message.body)
+
+#SENDING A MAIL + LINK + SENDING SMS
+
+action_frame = ttk.Frame(window, padding=10)
+action_frame.pack(fill="x", pady=10)
+action_frame.columnconfigure(0, weight=1)
+action_frame.columnconfigure(1, weight=1)
+action_frame.columnconfigure(2, weight=1)
+
+ttk.Label(action_frame, text="Send it to your email").grid(column=0, row=0, pady=5)
+email_input = ttk.Entry(action_frame, width=35, justify="center")
+email_input.grid(column=0, row=1)
+
+email_button = ttk.Button(action_frame, text="Send", command=sending_email)
 email_button.grid(column=0, row=2, pady=5)
 
-#EMAIL CONFIRMATION
+link = ttk.Label(action_frame, text="Go to the webside").grid(column=1, row=0, pady=5)
+link_result = ttk.Label(action_frame, font=("Calibri", 15))
+link_result.grid(column=1, row=1, pady=5)
 
-email_sent_frame = ttk.Frame(window, padding=10)
-email_sent_frame.pack(fill="x", pady=10)
-email_sent_frame.columnconfigure(0, weight=1)
+link_button = ttk.Button(action_frame, text="Link", command=webside_link)
+link_button.grid(column=1, row=2, pady=5)
 
-email_sent_result = ttk.Label(email_sent_frame, font=("Calibri", 15))
-email_sent_result.grid(column=0, row=0)
+sms = ttk.Label(action_frame, text = "Save a link through message").grid(column=2, row=0, pady=5)
+sms_input = ttk.Entry(action_frame, width=35, justify = "center")
+sms_input.grid(column=2, row=1)
+sms_input.insert(0, "+420")
 
-#SENDING SMS
+sms_button = ttk.Button(action_frame, text="Send", command=sending_text)
+sms_button.grid(column=2, row=2, pady=5)
+
+#EMAIL + SMS CONFIRMATION
+
+sent_frame = ttk.Frame(window, padding=10)
+sent_frame.pack(fill="x", pady=10)
+sent_frame.columnconfigure(0, weight=1)
+
+sent_result = ttk.Label(sent_frame, font=("Calibri", 15))
+sent_result.grid(column=0, row=0)
+
 
 window.mainloop()
