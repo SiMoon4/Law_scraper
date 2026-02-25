@@ -98,6 +98,7 @@ def get_law():
     soup = BeautifulSoup(data, "lxml")
     selector = f"[id*='par_{p}']"
     law = soup.select(selector=selector)
+    law_response.clear()
     for i in law:
         law_response.append(i.get_text())
     
@@ -149,17 +150,26 @@ def sending_email():
 #LINK FUNCTION
 
 def webside_link():
-    webbrowser.open_new(url=url)
-    print(law_response)
+    try:
+        webbrowser.open_new(url=url)
+        print(law_response)
+    except NameError:
+        sent_result.config(text="First, find the law", foreground="red")
 
 #SMS_FUNCTION
 
 def sending_text():
+    try:
+        if law_response == []:
+            sent_result.config(text="First, find the law", foreground="red")
+        phone_number_to = sms_input.get()
+        client = Client(username=twilio_username, password=twilio_password)
+        message = client.messages.create(body=f"Here is the link to the law\n{url}", from_=phone_number_from, to=phone_number_to)
+        sent_result.config(text="Message HAS BEEN sent!", foreground="green")
 
-    phone_number_to = sms_input.get()
-    client = Client(username=twilio_username, password=twilio_password)
-    message = client.messages.create(body=f"Here is the link to the law\n{url}", from_=phone_number_from, to=phone_number_to)
-    print(message.body)
+    except Exception as e:
+        sent_result.config(text="Message has NOT been sent!", foreground="red")
+        print(f"Message has not been sent! Error: {e}")
 
 #SENDING A MAIL + LINK + SENDING SMS
 
