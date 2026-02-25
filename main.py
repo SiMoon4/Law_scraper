@@ -11,7 +11,6 @@ import webbrowser
 from twilio.rest import Client
 import datetime
 import lxml
-#twilio sms poslani
 
 load_dotenv()
 
@@ -91,16 +90,36 @@ def get_law():
         return
 
     url = f"https://krajta.slv.cz/{y}/{n}/par_{p}"
-    response = requests.get(url=url, headers=headers)
-    response.raise_for_status()
-    data = response.text
+    try:
+        response = requests.get(url=url, headers=headers)
+        response.raise_for_status()
+        data = response.text
 
-    soup = BeautifulSoup(data, "lxml")
-    selector = f"[id*='par_{p}']"
-    law = soup.select(selector=selector)
-    law_response.clear()
-    for i in law:
-        law_response.append(i.get_text())
+        soup = BeautifulSoup(data, "lxml")
+        law_response.clear()
+        paragraph_header = soup.find("div", {"id": f"par_{p}"})
+        if paragraph_header:
+            paragraphs = []
+            for sibling in paragraph_header.find_next_siblings():
+                if "c6" in sibling.get("class", []):
+                    break
+                if "c7" in sibling.get("class", []):
+                    odst_id = sibling.get("id", "")
+                    text = sibling.get_text(strip=True)
+                    if text:
+                        if "odst" in odst_id:
+                            paragraphs.append(f"• {text}")
+                        else:
+                            paragraphs.append(text)
+            if paragraphs:
+                number_of_paragraph = paragraph_header.get_text()
+                law_response = paragraphs
+                law_response.insert(0,number_of_paragraph)
+
+    except Exception as e:
+        search_result.config(text="The law HAS NOT BEEN found", foreground="red")
+        link_result.config(text="Link is NOT ready!", foreground="red")
+        print(f"Error: {e}")
     
     if law_response == []:
         search_result.config(text="The law HAS NOT BEEN found", foreground="red")
@@ -108,6 +127,8 @@ def get_law():
     else:
         search_result.config(text="The law HAS BEEN found", foreground="green")
         link_result.config(text="Link is ready!", foreground="green")
+
+#SEARCH BUTTON 
 
 search_button = ttk.Button(input_frame, text="Search", command=get_law, width=25)
 search_button.grid(column=0, row=2, columnspan=3, pady=10)
